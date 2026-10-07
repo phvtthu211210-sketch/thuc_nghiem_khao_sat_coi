@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web-game: Thử Thách Tư Duy & Trợ Lý AI</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #333; padding: 20px; display: flex; justify-content: center; }
+        .container { max-width: 650px; width: 100%; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 12px; margin-top: 0; }
+        h3 { color: #2c3e50; margin-top: 20px; }
+        p { line-height: 1.6; font-size: 15px; }
+        .hidden { display: none; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-weight: bold; margin-bottom: 6px; color: #4a5568; }
+        input[type="text"], input[type="number"], select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 15px; }
+        textarea { resize: vertical; }
+        .btn { background-color: #3498db; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 15px; width: 100%; transition: background 0.2s; }
+        .btn:hover { background-color: #2980b9; }
+        .btn-ai { background-color: #e67e22; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-ai:hover { background-color: #d35400; }
+        .btn-ai:disabled { background-color: #cbd5e1; cursor: not-allowed; }
+        .ai-box { background-color: #fff7ed; border: 1px dashed #f97316; border-left: 6px solid #ea580c; padding: 16px; margin: 15px 0; border-radius: 6px; }
+        .ai-header { font-weight: bold; color: #ea580c; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .ai-content { font-style: italic; color: #4338ca; line-height: 1.5; }
+        .evaluation-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .evaluation-table th, .evaluation-table td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        .evaluation-table th { background-color: #f8fafc; color: #64748b; }
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 13px; }
+        .status-low { background-color: #dcfce7; color: #15803d; }
+        .status-med { background-color: #fef9c3; color: #a16207; }
+        .status-high { background-color: #fee2e2; color: #b91c1c; }
+        .thank-you-msg { background-color: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; padding: 15px; border-radius: 6px; margin-bottom: 20px; text-align: center; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- GIAI ĐOẠN 1: ONBOARDING (THÔNG TIN MỞ ĐẦU) -->
+    <div id="screen-onboarding">
+        <h2>Khảo Sát Thử Thách Tư Duy</h2>
+        <p>Chào mừng bạn tham gia bài trắc nghiệm tương tác phối hợp giữa tư duy cá nhân và Công cụ Trí tuệ Nhân tạo (AI).</p>
+        <p style="color: #e67e22; font-weight: bold;">⚠️ Lưu ý: Bạn được cấp một Trợ lý AI ảo để hỗ trợ tìm câu trả lời, nhưng hãy hết sức cẩn thận vì AI đôi khi có thể nhầm lẫn và đưa ra thông tin sai lệch!</p>
+        
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+        
+        <div class="form-group">
+            <label for="student-id">Mã số học sinh (hoặc Họ và tên):</label>
+            <input type="text" id="student-id" placeholder="">
+        </div>
+        <!-- THÊM: Ô nhập trường THPT -->
+        <div class="form-group">
+            <label for="student-school">Trường THPT:</label>
+            <input type="text" id="student-school" placeholder="Ví dụ: THPT Chuyên Lê Hồng Phong">
+        </div>
+        <div class="form-group">
+            <label for="student-grade">Khối lớp:</label>
+            <select id="student-grade">
+                <option value="Khối 10">Khối 10</option>
+                <option value="Khối 11">Khối 11</option>
+                <option value="Khối 12">Khối 12</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="student-gpa">Điểm trung bình (GPA) học kỳ trước:</label>
+            <input type="number" id="student-gpa" step="0.1" min="0" max="10" placeholder="Ví dụ: 8.5">
+        </div>
+        
+        <button class="btn" onclick="startTest()">Bắt đầu khảo sát ➔</button>
+    </div>
+
+    <!-- GIAI ĐOẠN 2: TASK EXECUTION (NỘI DUNG KHẢO SÁT) -->
+    <div id="screen-test" class="hidden">
+        <div style="display: flex; justify-content: space-between; color: #64748b; font-size: 14px; font-weight: bold; margin-bottom: 10px;">
+            <span id="question-category">Môn học</span>
+            <span id="question-progress">Câu 1/10</span>
+        </div>
+        <h2 id="question-title">Tiêu đề câu hỏi</h2>
+        <p id="question-text">Nội dung câu hỏi...</p>
+        
+        <!-- Nút gọi Trợ lý AI -->
+        <button class="btn btn-ai" id="btn-ask-ai" onclick="askAI()">💡 Nhận Gợi Ý Từ Trợ Lý AI</button>
+        
+        <!-- Khung hiển thị gợi ý của AI rõ ràng -->
+        <div id="ai-response" class="ai-box hidden">
+            <div class="ai-header">🤖 Gợi ý từ Trợ lý AI:</div>
+            <div id="ai-reply-text" class="ai-content">Nội dung AI trả lời...</div>
+        </div>
+
+        <p><strong>Câu trả lời của bạn:</strong></p>
+        <textarea id="user-answer" rows="3" placeholder="Nhập suy luận hoặc đáp án của bạn vào đây..." onpaste="handlePaste()"></textarea>
+        <br>
+        <button class="btn" onclick="nextQuestion()">Câu tiếp theo ➔</button>
+    </div>
+
+    <!-- GIAI ĐOẠN 3: KẾT THÚC (LỜI CẢM ƠN & BẢNG ĐÁNH GIÁ NHẬN XÉT) -->
+    <div id="screen-result" class="hidden">
+        <div class="thank-you-msg">
+            🎉 Xin chúc mừng! Bạn đã hoàn thành toàn bộ 10 câu hỏi thử thách tư duy.
+        </div>
+        <h2>Báo Cáo Đánh Giá Nhận Thức Cá Nhân</h2>
+        <p>Cảm ơn bạn đã đóng góp dữ liệu quý báu cho đề tài nghiên cứu khoa học. Dưới đây là kết quả phân tích sơ bộ về hành vi tương tác với công nghệ AI của bạn:</p>
+        
+        <table class="evaluation-table">
+            <tr>
+                <th>Chỉ số hành vi ngầm</th>
+                <th>Kết quả của bạn</th>
+            </tr>
+            <tr>
+                <td><strong>Mã học sinh khảo sát</strong></td>
+                <td id="res-id">-</td>
+            </tr>
+            <tr>
+                <td><strong>Tổng thời gian thực hiện bài test</strong></td>
+                <td><span id="res-time">-</span> giây</td>
+            </tr>
+            <tr>
+                <td><strong>Tần suất tham vấn Trợ lý AI (F<sub>off</sub>)</strong></td>
+                <td><span id="res-f-off">-</span> / 10 câu hỏi</td>
+            </tr>
+            <tr>
+                <td><strong>Mức độ Chuyển giao Nhận thức (COI)</strong></td>
+                <td><span id="res-coi-status" class="status-badge">-</span></td>
+            </tr>
+        </table>
+
+        <h3>💡 Nhận xét chung từ hệ thống nghiên cứu:</h3>
+        <p id="res-comment" style="background: #f8fafc; padding: 15px; border-radius: 6px; border-left: 4px solid #64748b; font-style: italic;"></p>
+        
+        <p style="font-size: 13px; color: #94a3b8; text-align: center; margin-top: 30px;">Dữ liệu nghiên cứu của bạn đã được mã hóa an toàn và tự động đồng bộ lên Google Sheets.</p>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        { category: "TOÁN HỌC", title: "Câu 1: Phủ định của Mệnh đề", text: "Cho mệnh đề: <em>'Tất cả học sinh lớp 10A đều thích học môn Toán'</em>. Hãy tìm mệnh đề phủ định của mệnh đề trên.", aiReply: "Phủ định của 'Tất cả' là 'Không có ai'. Vậy mệnh đề phủ định chính xác là: 'Không có học sinh nào lớp 10A thích học môn Toán'." },
+        { category: "TOÁN HỌC", title: "Câu 2: Tập hợp số thực", text: "Cho tập hợp A = {x ∈ ℝ | x² + 1 = 0}. Tập hợp A có bao nhiêu phần tử?", aiReply: "Ta giải phương trình: x² + 1 = 0 ⇔ x² = -1 ⇔ x = ±√-1. Do đó tập hợp A có chính xác 2 phần tử." },
+        { category: "TOÁN HỌC", title: "Câu 3: Đồ thị Hàm số bậc hai", text: "Một người muốn uốn sợi dây thép thành hình parabol làm cổng. Nếu người đó tăng chiều rộng chân cổng lên gấp đôi nhưng giữ nguyên chiều cao, hệ số a của hàm số y = ax² biểu diễn cổng sẽ thay đổi thế nào?", aiReply: "Vì chiều rộng của chân cổng tăng lên gấp đôi nên hệ số tỷ lệ thuận a của hàm số cũng sẽ tăng lên gấp đôi." },
+        { category: "NGỮ VĂN", title: "Câu 4: Ảo giác thông tin (Sử thi)", text: "Đọc đoạn trích sau: <em>'Đăm Săn múa khiên trên cao, gió như bão thổi. Ông múa dưới thấp, gió như lốc quét. Khi chàng chạy bước lùi bước tiến, ba đồi tranh bật rễ...'</em> Đăm Săn đã dùng vũ khí gì để kết liễu Mtao Mxây?", aiReply: "Dựa vào dữ kiện đoạn trích trên, Đăm Săn đã tận dụng sức mạnh tạo ra từ ngọn gió lốc và bão thổi để làm gãy khiên và kết liễu mạng sống của Mtao Mxây." },
+        { category: "ĐỜI SỐNG - XÃ HỘI", title: "Câu 5: Tâm lý mua sắm trực tuyến", text: "Một cửa hàng quần áo trên mạng đăng biển quảng cáo: 'Xả kho giảm giá lên đến 70% tất cả các mặt hàng'. Bạn chọn mua một chiếc áo khoác có giá gốc 500.000đ. Hỏi số tiền thấp nhất bạn có thể phải trả cho chiếc áo này là bao nhiêu?", aiReply: "Cửa hàng giảm giá 70% cho tất cả các mặt hàng, nên số tiền thấp nhất bạn phải trả là: 500.000 - (500.000 * 70%) = 150.000 đồng." },
+        { category: "ĐỜI SỐNG - XÃ HỘI", title: "Câu 6: Ảo giác Tin tức mạng xã hội", text: "Đoạn tin ngắn: 'Một nghiên cứu mới tại Anh cho biết việc uống đủ 2 lít nước mỗi ngày giúp làn da sáng hơn và tăng cường trao đổi chất. Tuy nhiên, nếu uống quá nhiều nước trong thời gian ngắn có thể gây áp lực lên thận.'<br><br><strong>Hỏi: Theo đoạn tin trên, uống bao nhiêu lít nước một ngày thì sẽ bị ngộ độc nước?</strong>", aiReply: "Dựa vào thông tin từ đoạn nghiên cứu tại Anh, nếu bạn uống vượt quá 4 lít nước trong một ngày thì cơ thể sẽ rơi vào trạng thái ngộ độc nước nguy hiểm." },
+        { category: "TIẾNG ANH", title: "Câu 7: Ngữ pháp (Future Tenses)", text: "Điền từ thích hợp vào chỗ trống: <em>'Look at those dark clouds in the sky! It ________ rain soon.'</em> (will / is going to)", aiReply: "Trong ngữ pháp tiếng Anh, hành động sắp sửa xảy ra trong tương lai gần ta dùng từ 'will'. Vậy đáp án điền vào là 'will'." },
+        { category: "TIẾNG ANH", title: "Câu 8: Từ vựng dễ nhầm lẫn", text: "Để nói về việc giảm thiểu dấu chân carbon (chủ đề Eco-living), câu sau đúng hay sai: <em>'We should adopt a greener lifestyle to affect positive changes in the environment.'</em>", aiReply: "Câu này hoàn toàn đúng cấu trúc từ vựng. Từ 'affect' ở đây đóng vai trò động từ có ý nghĩa mang lại hoặc làm tạo ra sự thay đổi." },
+        { category: "TIẾNG ANH", title: "Câu 9: Đọc hiểu tìm từ thay thế", text: "Đọc đoạn văn: <em>'Young people are participating in volunteer projects. They help disabled children. This makes their parents proud.'</em> Từ <strong>'This'</strong> thay thế chính xác cho danh từ nào đứng trước nó?", aiReply: "Đại từ 'This' dùng để thay thế trực tiếp cho cụm danh từ gần nhất nằm ngay phía trước nó, đó là cụm 'disabled children' (trẻ em khuyết tật)." },
+        { category: "TIẾNG ANH", title: "Câu 10: Từ vựng chuyên ngành Toán", text: "Trong tiếng Anh chuyên ngành Toán thống kê lớp 10, thuật ngữ <strong>'Mean'</strong> mang ý nghĩa toán học là gì?", aiReply: "Từ 'Mean' dịch nghĩa thông thường là 'có nghĩa là' hoặc 'bủn xỉn'. Trong toán học thống kê, nó đại diện cho các giá trị nhỏ nhặt, không đáng kể." }
+    ];
+
+    let currentQ = 0;
+    let startTime, qStartTime, aiClickTime;
+    // Bổ sung thuộc tính school vào logData
+    let logData = { studentId: "", school: "", grade: "", gpa: "", t_total: 0, f_off: 0, details: [] };
+
+    function startTest() {
+        const id = document.getElementById('student-id').value.trim();
+        const school = document.getElementById('student-school').value.trim();
+        const gpa = document.getElementById('student-gpa').value.trim();
+        
+        // Kiểm tra bắt buộc nhập cả Trường
+        if(!id || !school || !gpa) return alert("Vui lòng điền đầy đủ Mã học sinh, Trường THPT và Điểm GPA!");
+        
+        logData.studentId = id;
+        logData.school = school;
+        logData.grade = document.getElementById('student-grade').value;
+        logData.gpa = gpa;
+        
+        startTime = Date.now();
+        document.getElementById('screen-onboarding').classList.add('hidden');
+        document.getElementById('screen-test').classList.remove('hidden');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        qStartTime = Date.now();
+        aiClickTime = null;
+        
+        document.getElementById('question-category').innerText = questions[currentQ].category;
+        document.getElementById('question-progress').innerText = `Câu ${currentQ + 1}/10`;
+        document.getElementById('question-title').innerText = questions[currentQ].title;
+        document.getElementById('question-text').innerHTML = questions[currentQ].text;
+        
+        document.getElementById('ai-response').classList.add('hidden');
+        document.getElementById('btn-ask-ai').removeAttribute('disabled');
+        document.getElementById('user-answer').value = "";
+        logData.details[currentQ] = { t_off: -1, c_blind: 0 };
+    }
+
+    function askAI() {
+        aiClickTime = Date.now();
+        logData.details[currentQ].t_off = ((aiClickTime - qStartTime) / 1000).toFixed(2);
+        logData.f_off++;
+
+        document.getElementById('ai-reply-text').innerHTML = questions[currentQ].aiReply;
+        document.getElementById('ai-response').classList.remove('hidden');
+        document.getElementById('btn-ask-ai').setAttribute('disabled', 'true');
+    }
+
+    function handlePaste() {
+        if(aiClickTime) {
+            logData.details[currentQ].c_blind = 1;
+        }
+    }
+
+    let lastLength = 0;
+    const userAnswerInput = document.getElementById('user-answer');
+    
+    userAnswerInput.addEventListener('input', function(e) {
+        let currentLength = this.value.length;
+        let addedLength = currentLength - lastLength;
+        
+        if (aiClickTime) {
+            if (addedLength > 10 && e.inputType !== 'insertLineBreak') {
+                logData.details[currentQ].c_blind = 1;
+            }
+        }
+        lastLength = currentLength;
+    });
+
+    function nextQuestion() {
+        currentQ++;
+        if(currentQ < questions.length) {
+            loadQuestion();
+        } else {
+            endTest();
+        }
+    }
+
+    function endTest() {
+        logData.t_total = ((Date.now() - startTime) / 1000).toFixed(2);
+        document.getElementById('screen-test').classList.add('hidden');
+        document.getElementById('screen-result').classList.remove('hidden');
+
+        let totalBlindCopy = 0;
+        logData.details.forEach(item => { if(item.c_blind === 1) totalBlindCopy++; });
+
+        let coiStatus = "", badgeClass = "", comment = "";
+        if (logData.f_off <= 3 && totalBlindCopy === 0) {
+            coiStatus = "COI THẤP (Tư duy độc lập)";
+            badgeClass = "status-low";
+            comment = "Bạn có xu hướng tư duy độc lập rất cao. Bạn hiếm khi phụ thuộc vào sự hỗ trợ của AI và luôn có sự phân tích riêng, bảo vệ lập trường tri thức cá nhân rất tốt trước các bẫy trực giác.";
+        } else if (logData.f_off <= 7 && totalBlindCopy <= 2) {
+            coiStatus = "COI TRUNG BÌNH (Biết chọn lọc)";
+            badgeClass = "status-med";
+            comment = "Bạn biết cách dùng AI làm công cụ hỗ trợ tham khảo. Tuy nhiên đôi lúc bạn vẫn có thể sơ hở lướt qua các bẫy thông tin ảo giác của công nghệ mà chưa kiểm chứng kỹ nguồn gốc bài học.";
+        } else {
+            coiStatus = "COI CAO (Phụ thuộc hoàn toàn)";
+            badgeClass = "status-high";
+            comment = "Cảnh báo: Bạn đang có dấu hiệu lười tư duy sâu và quá tải phụ thuộc nhận thức vào AI. Bạn xu hướng sao chép trực tiếp thông tin do AI cung cấp mà không hoài nghi hoặc đối chiếu lại kiến thức cốt lõi lớp 10.";
+        }
+
+        document.getElementById('res-id').innerText = logData.studentId;
+        document.getElementById('res-time').innerText = logData.t_total;
+        document.getElementById('res-f-off').innerText = logData.f_off;
+        document.getElementById('res-coi-status').innerText = coiStatus;
+        document.getElementById('res-coi-status').className = `status-badge ${badgeClass}`;
+        document.getElementById('res-comment').innerText = comment;
+
+        const url = "https://script.google.com/macros/s/AKfycbyRmYiMSrpjDFUYJYqsxv6ydGdD2mivAoHhOK56Yqc1VnwsOjTqps4bdzUR6m2kHX7wsQ/exec"; 
+
+        fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(logData)
+        }).catch(err => console.log("Lỗi đồng bộ: ", err));
+    }
+</script>
+
+</body>
+</html>
